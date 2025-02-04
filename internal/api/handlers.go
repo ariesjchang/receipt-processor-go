@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/google/uuid"
@@ -18,20 +20,17 @@ var (
 
 // ProcessReceipt handles the receipt processing endpoint
 func ProcessReceipt(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var receipt models.Receipt
 	if err := json.NewDecoder(r.Body).Decode(&receipt); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		http.Error(w, "The receipt is invalid.", http.StatusBadRequest)
 		return
 	}
 
 	// Validate required fields
-	if receipt.Retailer == "" || receipt.Total == "" || receipt.PurchaseDate == "" || receipt.PurchaseTime == "" || receipt.Items == nil {
-		http.Error(w, "Missing required fields", http.StatusBadRequest)
+	var totalPattern = regexp.MustCompile(`^\d+\.\d{2}$`)
+	if receipt.Retailer == "" || receipt.Total == "" || receipt.PurchaseDate == "" ||
+		receipt.PurchaseTime == "" || len(receipt.Items) == 0 || !totalPattern.MatchString(receipt.Total) {
+		http.Error(w, "The receipt is invalid.", http.StatusBadRequest)
 		return
 	}
 
@@ -51,15 +50,15 @@ func ProcessReceipt(w http.ResponseWriter, r *http.Request) {
 
 // GetPoints handles fetching the points for a receipt by ID
 func GetPoints(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Path[len("/receipts/"):]
-	id = id[:len(id)-len("/points")]
+	id := strings.TrimPrefix(r.URL.Path, "/receipts/")
+	id = strings.TrimSuffix(id, "/points")
 
 	mu.RLock()
 	receipt, exists := receipts[id]
 	mu.RUnlock()
 
 	if !exists {
-		http.Error(w, "Receipt not found", http.StatusNotFound)
+		http.Error(w, "No receipt found for that ID.", http.StatusNotFound)
 		return
 	}
 
