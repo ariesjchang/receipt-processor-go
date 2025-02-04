@@ -18,7 +18,7 @@ func CalculatePoints(receipt models.Receipt) int {
 
 	// 2. Check if the total is a round number (50 points) and/or multiple of 0.25 (25 points)
 	if total, err := strconv.ParseFloat(receipt.Total, 64); err == nil {
-		if total == float64(int(total)) {
+		if math.Mod(total, 1.0) == 0 {
 			points += 50
 		}
 		if int(total*100)%25 == 0 {
