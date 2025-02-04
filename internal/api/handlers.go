@@ -29,6 +29,12 @@ func ProcessReceipt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate required fields
+	if receipt.Retailer == "" || receipt.Total == "" || receipt.PurchaseDate == "" || receipt.PurchaseTime == "" || receipt.Items == nil {
+		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+
 	// Generate ID and calculate points
 	receipt.ID = uuid.New().String()
 	receipt.Points = services.CalculatePoints(receipt)

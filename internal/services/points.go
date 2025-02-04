@@ -46,9 +46,9 @@ func CalculatePoints(receipt models.Receipt) int {
 		}
 	}
 
-	// 6. 10 points if purchase time is between 2:00pm and 4:00pm
+	// 6. 10 points if purchase time is after 2:00pm and before 4:00pm
 	if t, err := time.Parse("15:04", receipt.PurchaseTime); err == nil {
-		if t.Hour() >= 14 && t.Hour() < 16 {
+		if (t.Hour() == 14 && t.Minute() > 0) || t.Hour() == 15 {
 			points += 10
 		}
 	}
